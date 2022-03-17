@@ -1,90 +1,49 @@
-mod utils;
-
-use crate::utils::*;
+#![feature(trivial_bounds)]
 
 use near_sdk::{
-	// log,
-	require,
-	env, near_bindgen, Balance, AccountId, BorshStorageKey, PanicOnDefault, Promise,
+	near_bindgen, PanicOnDefault,
 	borsh::{self, BorshDeserialize, BorshSerialize},
-	collections::{LookupMap, UnorderedMap, UnorderedSet},
-	json_types::{U128},
 };
 
-pub const STORAGE_KEY_DELIMETER: char = '|';
-
-#[derive(BorshSerialize, BorshStorageKey)]
-enum StorageKey {
-	EventsByName,
-    NetworksByOwner { event_name: String },
-    Connections { event_name_and_owner_id: String },
-}
-
-#[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
-pub struct Network {
-	connections: UnorderedSet<AccountId>,
-}
-
-#[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
-pub struct Event {
-	networks_by_owner: LookupMap<AccountId, Network>,
-}
+use mini_colls::{
+	IntMap
+};
 
 #[near_bindgen]
 #[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
 pub struct Contract {
-	owner_id: AccountId,
-	events_by_name: UnorderedMap<String, Event>,
+	map: IntMap,
 }
 
 #[near_bindgen]
 impl Contract {
-    #[init]
-    pub fn new(owner_id: AccountId) -> Self {
-        Self {
-			owner_id,
-			events_by_name: UnorderedMap::new(StorageKey::EventsByName),
-        }
-    }
-	
-    #[payable]
-    pub fn create_event(&mut self, event_name: String) {
-		let initial_storage_usage = env::storage_usage();
 
-		require!(env::predecessor_account_id() == self.owner_id, "owner only");
-		
-        require!(self.events_by_name.insert(&event_name.clone(), &Event{
-			networks_by_owner: LookupMap::new(StorageKey::NetworksByOwner { event_name }),
-		}).is_none(), "event exists");
+	#[init]
+	pub fn new() -> Self {
+		Self {
+			map: Default::default()
+		}
+	}
 
-        refund_deposit(env::storage_usage() - initial_storage_usage);
-    }
-	
-    #[payable]
-    pub fn create_connection(&mut self, event_name: String, new_connection_id: AccountId) {
-		let initial_storage_usage = env::storage_usage();
+	pub fn set(&mut self, val: String) -> Option<u64> {
+		self.map.set(val.as_bytes())
+	}
 
-		let network_owner_id = env::predecessor_account_id();
-		let mut event = self.events_by_name.get(&event_name).unwrap_or_else(|| env::panic_str("no event"));
-		let mut network = event.networks_by_owner.get(&network_owner_id).unwrap_or_else(|| Network{
-			connections: UnorderedSet::new(StorageKey::Connections { event_name_and_owner_id: format!("{}{}{}", event_name, STORAGE_KEY_DELIMETER, network_owner_id.clone()) })
-		});
+	pub fn update(&mut self, key: u64, val: String) -> bool {
+		self.map.update(key, val.as_bytes())
+	}
 
-		network.connections.insert(&new_connection_id);
-		event.networks_by_owner.insert(&network_owner_id, &network);
+	pub fn del(&mut self, key: u64) -> String {
+		String::from_utf8(self.map.del(key).unwrap()).unwrap()
+	}
 
-        refund_deposit(env::storage_usage() - initial_storage_usage);
-    }
+	pub fn get(&self, key: u64) -> String {
+		String::from_utf8(self.map.get(key).unwrap()).unwrap()
+	}
 
-	/// views
-	
-    pub fn get_events(&self, from_index: Option<U128>, limit: Option<u64>) -> Vec<String> {
-		unordered_map_key_pagination(&self.events_by_name, from_index, limit)
-    }
-	
-    pub fn get_connections(&self, event_name: String, network_owner_id: AccountId, from_index: Option<U128>, limit: Option<u64>) -> Vec<AccountId> {
-		let event = self.events_by_name.get(&event_name).unwrap_or_else(|| env::panic_str("no event"));
-		let network = event.networks_by_owner.get(&network_owner_id).unwrap_or_else(|| env::panic_str("no network"));
-		unordered_set_pagination(&network.connections, from_index, limit)
-    }
+	pub fn get_key(&self, val: String) -> Option<u64> {
+		self.map.get_key(val.as_bytes())
+	}
 }
+    
+	

@@ -1,0 +1,9 @@
+[package]
+name = "mini-colls"
+version = "0.1.0"
+authors = ["Matt Lockyer <mattdlockyer@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+near-sdk = "4.0.0-pre.7"
+near-contract-standards = "4.0.0-pre.7"

@@ -8,8 +8,9 @@ edition = "2018"
 crate-type = ["cdylib"]
 
 [dependencies]
-near-sdk = "4.0.0-pre.5"
-near-contract-standards = "4.0.0-pre.5"
+near-sdk = "4.0.0-pre.7"
+near-contract-standards = "4.0.0-pre.7"
+mini-colls = { path = "../mini-colls" }
 
 [profile.release]
 codegen-units = 1

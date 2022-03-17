@@ -91,6 +91,7 @@ const recordStop = async (accountId) => {
 module.exports = {
 	init,
 	getAccount,
+	contractAccount,
 	createAccount,
 	getAccountBalance,
 	getAccountState,

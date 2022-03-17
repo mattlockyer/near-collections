@@ -1,6 +1,7 @@
 const test = require('ava');
 const {
 	getAccount, init,
+	contractAccount,
 	recordStart, recordStop,
 } = require('./test-utils');
 const getConfig = require("../utils/config");
@@ -13,104 +14,84 @@ const {
 // test.beforeEach((t) => {
 // });
 
-let contractAccount, event_name, aliceId, bobId, alice, bob;
-
 test('contract is deployed', async (t) => {
-	contractAccount = await init();
-
-	t.is(contractId, contractAccount.accountId);
+	try {
+		await contractAccount.functionCall({
+			contractId,
+			methodName: 'new',
+			gas,
+		})
+	} catch(e) {
+		if (!/already been initialized/.test(e)) {
+			throw e
+		}
+	}
+	t.true(true)
 });
 
-test('users initialized', async (t) => {
-	aliceId = 'alice.' + contractId;
-	bobId = 'bob.' + contractId;
-	alice = await getAccount(aliceId);
-	bob = await getAccount(bobId);
+test('test', async (t) => {
+	
+	await recordStart(contractId)
 
-	t.true(true);
-});
-
-test('create an event', async (t) => {
-	event_name = 'event-' + Date.now();
-
-	const res = await contractAccount.functionCall({
+	await contractAccount.functionCall({
 		contractId,
-		methodName: 'create_event',
+		methodName: 'set',
 		args: {
-			event_name,
+			val: 'a',
 		},
 		gas,
-		attachedDeposit,
-	});
+	})
 
-	t.is(res?.status?.SuccessValue, '');
-});
+	await recordStop(contractId)
 
-test('get events', async (t) => {
 	const res = await contractAccount.viewFunction(
 		contractId,
-		'get_events',
-		{}
-	);
-
-	// console.log(res)
-
-	t.true(res.length >= 1);
-});
-
-test('create a connection', async (t) => {
-
-	await recordStart(contractId);
-	
-	const res = await alice.functionCall({
-		contractId,
-		methodName: 'create_connection',
-		args: {
-			event_name,
-			new_connection_id: bobId,
-		},
-		gas,
-		attachedDeposit,
-	});
-
-	await recordStop(contractId);
-
-	t.is(res?.status?.SuccessValue, '');
-});
-
-test('create another connection', async (t) => {
-
-	const carolId = 'car.' + contractId;
-
-	await recordStart(contractId);
-
-	const res = await alice.functionCall({
-		contractId,
-		methodName: 'create_connection',
-		args: {
-			event_name,
-			new_connection_id: carolId,
-		},
-		gas,
-		attachedDeposit,
-	});
-	
-	await recordStop(contractId);
-
-	t.is(res?.status?.SuccessValue, '');
-});
-
-test('get connections', async (t) => {
-	const res = await alice.viewFunction(
-		contractId,
-		'get_connections',
+		'get_key',
 		{
-			event_name,
-			network_owner_id: aliceId,
-		}
-	);
+			val: 'a',
+		},
+	)
 
-	console.log(res);
+	console.log(res)
 
-	t.true(res.length >= 1);
+
+	t.true(true)
+});
+
+test('test 2', async (t) => {
+	
+	await recordStart(contractId)
+
+	const key = await contractAccount.viewFunction(
+		contractId,
+		'get_key',
+		{
+			val: 'a',
+		},
+	)
+
+	await contractAccount.functionCall({
+		contractId,
+		methodName: 'update',
+		args: {
+			key,
+			val: 'b',
+		},
+		gas,
+	})
+
+	await recordStop(contractId)
+
+	const res = await contractAccount.viewFunction(
+		contractId,
+		'get_key',
+		{
+			val: 'b',
+		},
+	)
+
+	console.log(res)
+
+
+	t.true(true)
 });
