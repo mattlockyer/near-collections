@@ -1,4 +1,8 @@
-# React 17, Parcel with useContext and useReducer
+# WIP
+
+This is an experimental repo.
+
+# (from boilerplate) React 17, Parcel with useContext and useReducer
 - Bundled with Parcel 2.0.1
 - *Minimal all-in-one state management with async/await support*
 
